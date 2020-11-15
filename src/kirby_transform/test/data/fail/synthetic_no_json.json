@@ -1,0 +1,6 @@
+{
+  "collector": "modemstats",
+  "platform": "modem",
+  "language": "rust",
+  "destination": "AWS-IOT"
+}

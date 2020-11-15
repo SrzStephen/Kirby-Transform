@@ -1,0 +1,10 @@
+bumpversion==0.5.3
+docker==4.3.1
+influxdb-client==1.12.0
+marshmallow==3.9.1
+pytest==5.4.2
+pytz==2020.1
+requests==2.23.0
+requests-toolbelt==0.9.1
+responses==0.10.14
+knobs==2.1.1

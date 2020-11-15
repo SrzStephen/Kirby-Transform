@@ -1,0 +1,15 @@
+language: python
+services:
+  - docker
+before_install:
+  - docker pull quay.io/influxdb/influxdb:v2.0.1
+python:
+  - "3.6"      # current default Python on Travis CI
+  - "3.7"
+  - "3.8"
+# command to install dependencies
+install:
+  - pip install -r requirements.txt
+# command to run tests
+script:
+  - pytest

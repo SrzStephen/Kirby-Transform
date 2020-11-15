@@ -1,0 +1,28 @@
+{
+  "collector": "modemstats",
+  "data": [
+    {
+      "fields": {
+        "rssi": -76,
+        "rsrp": -111,
+        "rsrq": -15,
+        "snr": 2,
+        "physical_cell": 2,
+        "lte_band": 7
+      }
+    }
+  ],
+  "destination": "AWS-IOT",
+  "language": "rust",
+  "platform": "modem",
+  "uptime": 0,
+  "version": "1.0.0",
+  "meta_tags": {
+    "foo": 1,
+    "bar": "Baz"
+  },
+  "dat_tags": {
+    "baz": "Test",
+    "something": 1
+  }
+}
