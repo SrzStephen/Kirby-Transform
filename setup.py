@@ -7,7 +7,7 @@ with open(path.join(here, 'readme.md'), encoding='utf-8') as f:
 
 setup(
     name="kirby_transform",
-    version="0.0.2",
+    version="0.0.3",
     description="Transformation middleware for project Kirby",
     long_description_content_type="text/markdown",
     url="TODO",
@@ -21,9 +21,5 @@ setup(
     python_requires=">=3.5",
     platforms="linux",
     entry_points={'console_scripts': [
-    ]},
-    include_package_data=True,
-    package_data={
-        "": ["test/data/**.json"]
-    }
+    ]}
 )
