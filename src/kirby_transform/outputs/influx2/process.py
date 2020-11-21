@@ -1,6 +1,5 @@
 from kirby_transform.processor import Processor
 from influxdb_client import WritePrecision, InfluxDBClient, Point, WriteOptions
-from influxdb_client.client.write_api import PointSettings
 from rx.scheduler import ThreadPoolScheduler
 from multiprocessing import cpu_count
 from typing import List

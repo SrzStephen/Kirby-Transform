@@ -21,5 +21,9 @@ setup(
     python_requires=">=3.5",
     platforms="linux",
     entry_points={'console_scripts': [
-    ]}
+    ]},
+    include_package_data=True,
+    package_data={
+        "": ["test/data/**.json"]
+    }
 )
