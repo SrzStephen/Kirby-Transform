@@ -1,4 +1,4 @@
-# Kirby Transform
+# Kirby Transform [![Build Status](https://travis-ci.org/SrzStephen/Kirby-Transform.svg?branch=main)](https://travis-ci.org/SrzStephen/Kirby-Transform)
 ![](https://66.media.tumblr.com/tumblr_lpc46oU6Cy1qi1pnpo1_500.gifv)
 
 > Kirby is an extremely strong circle, and that's all the explanation I need.

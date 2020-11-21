@@ -7,7 +7,8 @@ from kirby_transform.test import get_sucessful_files
 from kirby_transform.outputs import InfluxAPI
 from influxdb_client import WritePrecision, Point
 from datetime import datetime
-
+from pathlib import Path
+data_dir = Path(__file__).parent.parent.absolute() / 'data'
 CONTAINER_TO_RUN = "quay.io/influxdb/influxdb:v2.0.1"
 TIME_TO_WAIT_FOR_CONTAINER_RESPONSE = 180
 INFLUX_CI_CONFIG = dict(
@@ -142,7 +143,7 @@ class IntegrationTest(TestCase):
         self.assertEqual(len(query_result), 1)
 
     def test_write(self) -> None:
-        for file, data in get_sucessful_files():
+        for file, data in get_sucessful_files(data_dir):
             self.InfluxClient.process(data)
             self.InfluxClient.send_all()
             query_api = self.InfluxClient.client.query_api()

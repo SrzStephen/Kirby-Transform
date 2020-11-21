@@ -1,5 +1,5 @@
 from kirby_transform.schema.input.schema import NestedInputData, CommonInput
-from kirby_transform.schema.output.schema import OutputDataSchema, OutputMetaSchema
+#from kirby_transform.schema. import OutputDataSchema, OutputMetaSchema
 from typing import List, Optional
 from time import time
 from kirby_transform import __version__
@@ -7,9 +7,7 @@ from numbers import Number
 from marshmallow import ValidationError
 from logging import getLogger
 from typing import Union
-from io import TextIOWrapper
 from abc import abstractmethod
-from dataclasses import dataclass
 
 logger = getLogger(__name__)
 
@@ -226,11 +224,13 @@ class Processor(object):
 
     @staticmethod
     def get_output_data_validator():
-        return OutputDataSchema()
+        raise NotImplementedError
+        #return OutputDataSchema()
 
     @staticmethod
     def get_metadata_schemas():
-        return OutputMetaSchema()
+        raise NotImplementedError
+        #return OutputMetaSchema()
 
     @staticmethod
     def report_is_valid(data: dict):

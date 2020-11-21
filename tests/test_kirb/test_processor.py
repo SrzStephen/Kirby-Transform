@@ -3,8 +3,9 @@ from kirby_transform.processor import make_data, make_meta_data_level, make_meta
 from kirby_transform.schema import CommonInput, NestedInputData
 from unittest import TestCase
 from time import time
+from pathlib import Path
 from io import StringIO
-
+data_dir = Path(__file__).parent.parent.absolute() / 'data'
 
 class TestDataGeneration(TestCase):
     def setUp(self) -> None:
@@ -12,7 +13,7 @@ class TestDataGeneration(TestCase):
         self.NestedInput = NestedInputData()
 
     def test_optional(self):
-        for file, data in get_sucessful_files():
+        for file, data in get_sucessful_files(data_dir):
             for report, combo in input_combinations(data):
                 collector = report.get('collector', None)
                 root_timestamp = report.get('timestamp', None)
@@ -32,7 +33,7 @@ class TestDataGeneration(TestCase):
                     raise
 
     def test_tags_get_added(self):
-        for file, data in get_sucessful_files():
+        for file, data in get_sucessful_files(data_dir):
             for report, combo in input_combinations(data):
                 for remove_all_existing_tags in [False, True]:
                     if remove_all_existing_tags:
@@ -52,7 +53,7 @@ class TestMetaGeneration(TestCase):
         pass
 
     def test_data_level(self):
-        for file, data in get_sucessful_files():
+        for file, data in get_sucessful_files(data_dir):
             for report, combo in input_combinations(data):
                 collector = report.get('collector', None)
                 root_timestamp = report.get('timestamp', None)
@@ -86,7 +87,7 @@ class TestMetaGeneration(TestCase):
             self.assertEqual(numm, 3)
 
     def test_top_level(self):
-        for file, data in get_sucessful_files():
+        for file, data in get_sucessful_files(data_dir):
             for report, combo in input_combinations(data):
                 collector = report.get('collector', None)
                 root_timestamp = report.get('timestamp', None)
@@ -113,7 +114,7 @@ class TestMetaGeneration(TestCase):
 
 class TestProcessor(TestCase):
     def test_validation(self):
-        for file, data in get_sucessful_files():
+        for file, data in get_sucessful_files(data_dir):
             for report, combo in input_combinations(data):
                 try:
                     self.assertTrue(Processor.report_is_valid(report))
@@ -122,7 +123,7 @@ class TestProcessor(TestCase):
                     raise
 
     def test_processor(self):
-        for file, data in get_sucessful_files():
+        for file, data in get_sucessful_files(data_dir):
             for report, combo in input_combinations(data):
                 try:
                     P = Processor().process(report)
@@ -142,7 +143,7 @@ class TestProcessor(TestCase):
                     raise
 
     def test_fields_data(self):
-        for file, data in get_sucessful_files():
+        for file, data in get_sucessful_files(data_dir):
             for report, combo in input_combinations(data):
                 try:
                     P = Processor().process(report)
