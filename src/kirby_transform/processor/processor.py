@@ -7,9 +7,7 @@ from numbers import Number
 from marshmallow import ValidationError
 from logging import getLogger
 from typing import Union
-from io import TextIOWrapper
 from abc import abstractmethod
-from dataclasses import dataclass
 
 logger = getLogger(__name__)
 
