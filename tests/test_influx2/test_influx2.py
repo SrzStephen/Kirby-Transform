@@ -128,7 +128,7 @@ class IntegrationTest(TestCase):
         for file, data in get_sucessful_files(data_dir):
             proc_data = self.InfluxClient.process(data)
             data = self.InfluxClient._generate_data(proc_data.data)
-            self.assertGreater(len(data), 1)
+            self.assertGreaterEqual(len(data), 1, msg=f"File {file} failed")
             for item in data:
                 self.assertIsInstance(item, Point)
 
@@ -146,7 +146,7 @@ class IntegrationTest(TestCase):
         start_time = time()
         query_result = list
         while time() - start_time < 10:
-            sleep(1)
+            sleep(0.01)
             query_result = query_api.query(query=query_string, org=INFLUX_CI_CONFIG['o'])
             if len(query_result) != 0:
                 break
@@ -163,8 +163,10 @@ class IntegrationTest(TestCase):
             start_time = time()
             query_result = 0
             while time() - start_time < 10:
-                sleep(1)
+                sleep(0.01)
                 query_result = query_api.query(query=query_string, org=INFLUX_CI_CONFIG['o'])
+                if len(query_result) != 0:
+                    break
             self.assertNotEqual(len(query_result), 0)
             records = [x.records[0].values for x in query_result]
             fields = list(map(itemgetter('_field'), records))
