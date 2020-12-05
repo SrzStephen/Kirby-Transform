@@ -8,6 +8,7 @@ from kirby_transform.outputs import InfluxAPI
 from influxdb_client import WritePrecision, Point
 from datetime import datetime
 from pathlib import Path
+
 data_dir = Path(__file__).parent.parent.absolute() / 'data'
 CONTAINER_TO_RUN = "quay.io/influxdb/influxdb:v2.0.1"
 TIME_TO_WAIT_FOR_CONTAINER_RESPONSE = 180
@@ -31,6 +32,7 @@ INFLUX_API_CONFIG = dict(
     data_bucket=INFLUX_CI_CONFIG['b'],
     meta_bucket=INFLUX_CI_CONFIG['b']
 )
+
 
 class IntegrationTest(TestCase):
 
@@ -122,13 +124,21 @@ class IntegrationTest(TestCase):
         "Also a good sanity check for contaienr running"
         self.assertTrue(self.InfluxClient.check_bucket_exists(bucket_name=INFLUX_CI_CONFIG['b']))
 
+    def test_data_generation(self):
+        for file, data in get_sucessful_files(data_dir):
+            proc_data = self.InfluxClient.process(data)
+            data = self.InfluxClient._generate_data(proc_data.data)
+            self.assertGreaterEqual(len(data), 1, msg=f"File {file} failed")
+            for item in data:
+                self.assertIsInstance(item, Point)
+
     def test_send_single(self):
         fields = dict(single_write_test=1)
         tags = dict(collector="test_influx_collector",
                     some_tag="tag2")
 
-        self.assertTrue(self.InfluxClient.send(report=[dict(tags=tags, fields=fields, timestamp=time())],
-                                               bucket=self.InfluxClient.data_bucket))
+        self.assertTrue(self.InfluxClient.send_data(data=[dict(tags=tags, fields=fields, timestamp=time())],
+                                                    bucket=self.InfluxClient.data_bucket))
         query_api = self.InfluxClient.client.query_api()
         bucket = INFLUX_CI_CONFIG['b']
         query_string = f'from(bucket:"{bucket}")|> range(start: -10m)\
@@ -136,7 +146,7 @@ class IntegrationTest(TestCase):
         start_time = time()
         query_result = list
         while time() - start_time < 10:
-            sleep(1)
+            sleep(0.01)
             query_result = query_api.query(query=query_string, org=INFLUX_CI_CONFIG['o'])
             if len(query_result) != 0:
                 break
@@ -144,8 +154,8 @@ class IntegrationTest(TestCase):
 
     def test_write(self) -> None:
         for file, data in get_sucessful_files(data_dir):
-            self.InfluxClient.process(data)
-            self.InfluxClient.send_all()
+            prod_data = self.InfluxClient.process(data)
+            self.InfluxClient.send(prod_data)
             query_api = self.InfluxClient.client.query_api()
             bucket = INFLUX_CI_CONFIG['b']
             collector = data['collector']
@@ -153,8 +163,10 @@ class IntegrationTest(TestCase):
             start_time = time()
             query_result = 0
             while time() - start_time < 10:
-                sleep(1)
+                sleep(0.01)
                 query_result = query_api.query(query=query_string, org=INFLUX_CI_CONFIG['o'])
+                if len(query_result) != 0:
+                    break
             self.assertNotEqual(len(query_result), 0)
             records = [x.records[0].values for x in query_result]
             fields = list(map(itemgetter('_field'), records))

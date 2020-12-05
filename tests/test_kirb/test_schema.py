@@ -42,16 +42,6 @@ class InputSchemaTest(TestCase):
 
 class TestInputValidators(TestCase):
     """Custom validators"""
-
-    def test_datafield(self):
-        validator = FieldValidator()
-        validator(dict())
-        mydict = dict(dict(a=1, b=2.2, c=3.14))
-        validator(mydict)
-        mydict["invalid"] = "foo"
-        with self.assertRaises(expected_exception=ValidationError):
-            validator(mydict)
-
     def test_unix_epoch(self):
         validator = UnixEpoch()
         # string instead of numeric

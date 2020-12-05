@@ -1,11 +1,13 @@
 from kirby_transform.test import get_sucessful_files, input_combinations
-from kirby_transform.processor import make_data, make_meta_data_level, make_meta_report_level, Processor
+from kirby_transform.processor import make_data, make_meta_data_level, make_meta_report_level, Processor, ProcessedData
 from kirby_transform.schema import CommonInput, NestedInputData
 from unittest import TestCase
 from time import time
 from pathlib import Path
 from io import StringIO
+
 data_dir = Path(__file__).parent.parent.absolute() / 'data'
+
 
 class TestDataGeneration(TestCase):
     def setUp(self) -> None:
@@ -104,7 +106,7 @@ class TestMetaGeneration(TestCase):
                                                            language=data.get('language'),
                                                            platform=data.get('platform'),
                                                            timestamp=root_timestamp,
-                                                           version=data.get('version'))
+                                                           version=data.get('version'))[0]
                 fields = report_level_data['fields']
                 self.assertEqual(fields['total_metrics'],
                                  fields['total_bool_metrics'] + fields['total_numeric_metrics'] +
@@ -117,7 +119,7 @@ class TestProcessor(TestCase):
         for file, data in get_sucessful_files(data_dir):
             for report, combo in input_combinations(data):
                 try:
-                    self.assertTrue(Processor.report_is_valid(report))
+                    self.assertTrue(Processor().report_is_valid(report))
                 except Exception:
                     print(f"Failed on {file.name} with variants {combo}")
                     raise
@@ -127,11 +129,12 @@ class TestProcessor(TestCase):
             for report, combo in input_combinations(data):
                 try:
                     P = Processor().process(report)
+                    self.assertIsNotNone(P)
                     self.assertIsNotNone(P.data)
-                    self.assertIsNotNone(P.report_meta_data)
-                    self.assertIsNotNone(P.data_meta_data)
-                    self.assertIsNotNone(P.meta_data)
-                    for item in P.data + P.meta_data:
+                    self.assertIsNotNone(P.all_meta_data)
+                    self.assertIsNotNone(P.report_level_meta_data)
+                    self.assertIsNotNone(P.data_level_meta_data)
+                    for item in P.all_meta_data + P.data:
                         # Todo output validator
                         self.assertIn("timestamp", item)
                         self.assertIsNotNone(item['timestamp'])
@@ -139,7 +142,6 @@ class TestProcessor(TestCase):
 
                 except Exception:
                     print(f"failed on {file.name} with variants {combo}")
-                    print(report)
                     raise
 
     def test_fields_data(self):
@@ -152,3 +154,22 @@ class TestProcessor(TestCase):
                 except Exception as e:
                     print(f"Failed with {file} and missing data {combo}")
                     raise
+
+    def test_meta_has_no_string(self):
+        for file, data in get_sucessful_files(data_dir):
+            for report, combo in input_combinations(data):
+                P = Processor().process(report)
+                for item in P.all_meta_data:
+                    for key, value in item['fields'].items():
+                        self.assertNotIsInstance(value, str,
+                                                 msg=f"String value found for key {key} in metadata. Metadata should only return numerics")
+
+    def test_return_no_string(self):
+        for file, data in get_sucessful_files(data_dir):
+            for report, combo in input_combinations(data):
+                P = Processor().process(report)
+                P.discard_strings()
+                for item in P.all_meta_data:
+                    for key, value in item['fields'].items():
+                        self.assertNotIsInstance(value, str,
+                                                 msg=f"String value found for key {key} in metadata. Metadata should only return numerics")

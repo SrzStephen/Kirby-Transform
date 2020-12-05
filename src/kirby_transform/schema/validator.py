@@ -50,8 +50,8 @@ class FieldValidator(Validator):
 
             if not (type(val) is float or type(val) is int):
                 non_numeric[key] = val
-        if len(non_numeric) > 0:
-            raise ValidationError(f"got metric fields that were non numeric {non_numeric}")
+        #if len(non_numeric) > 0:
+        #    raise ValidationError(f"got metric fields that were non numeric {non_numeric}")
 
 
 

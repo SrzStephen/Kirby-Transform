@@ -1,4 +1,6 @@
 from kirby_transform.processor import Processor
+from kirby_transform import ProcessedData
+from typing import Optional
 from influxdb_client import WritePrecision, InfluxDBClient, Point, WriteOptions
 from rx.scheduler import ThreadPoolScheduler
 from multiprocessing import cpu_count
@@ -11,12 +13,9 @@ logger = getLogger(__name__)
 
 
 class InfluxAPI(Processor):
-    def check_bucket_exists(self, bucket_name: str) -> bool:
-        self.client: InfluxDBClient  # type hinting for autocomplete
-        return self.client.buckets_api().find_bucket_by_name(bucket_name=bucket_name)
-
     def __init__(self, url: str, token: str, org: str, data_bucket: str, meta_bucket: str,
                  workers: int = cpu_count()):
+        super().__init__()
         self.client = InfluxDBClient(url=url, token=token, org=org)
         self.url = url
         self.token = token
@@ -31,20 +30,19 @@ class InfluxAPI(Processor):
         self.meta_bucket = meta_bucket
 
         # write with batch api with sane looking defaults
-        self.points = []
         self.api = self.client.write_api(write_options=WriteOptions(batch_size=200,
                                                                     flush_interval=2000,
                                                                     jitter_interval=100,
                                                                     retry_interval=2000,
                                                                     write_scheduler=ThreadPoolScheduler(
                                                                         max_workers=workers)))
-        self.banned_types = [type(None)]
 
-    def process_report(self, report) -> None:
-        self.process_report(report)
+    def check_bucket_exists(self, bucket_name: str) -> bool:
+        return self.client.buckets_api().find_bucket_by_name(bucket_name=bucket_name)
 
-    def generate_output(self, data: List[dict]):
-        self.points = []
+    @staticmethod
+    def _generate_data(data: List[dict]) -> List[Point]:
+        points = []
         for tags, fields, timestamp in map(itemgetter('tags', 'fields', 'timestamp'), data):
             collector = tags['collector']
             # Every measurement goes against what collected it
@@ -54,26 +52,22 @@ class InfluxAPI(Processor):
              key != 'collector' and not isinstance(value, type(None))]
             [p.field(key, value) for key, value in fields.items() if not isinstance(value, type(None))]
             p.time(datetime.fromtimestamp(timestamp, tz=timezone.utc), write_precision=WritePrecision.S)
-            self.points.append(p)
-        return self
+            points.append(p)
+        return points
 
-    def send(self, report: List[dict], bucket: str) -> bool:
-        self.generate_output(report)
-        if len(self.points) > 0:
-            self.api.write(bucket=bucket, record=self.points, org=self.org)
-            return True
-        return False
+    def process(self, data: dict) -> Optional[ProcessedData]:
+        p = self._process(data)
+        p.discard_strings()
+        return p
 
-    def send_all(self) -> bool:
-        self.generate_output(self.data)
-        data_points = self.points.copy()
-        self.generate_output(self.meta_data)
-        meta_points = self.points.copy()
-        if len(data_points) > 0 and len(meta_points) > 0:
-            logger.debug(f"Writing {len(data_points)} to {self.data_bucket} at {self.url}")
-            self.api.write(bucket=self.data_bucket, record=data_points)
-            logger.debug(f"Writing {len(meta_points)} to {self.meta_bucket} at {self.url}")
-            self.api.write(bucket=self.meta_bucket, record=meta_points)
-            return True
-        logger.debug(f"One of meta reports, len:{len(meta_points)} data reports len:{len(data_points)} was 0")
-        return False
+    def send_data(self, data: List[dict], **kwargs) -> bool:
+        """Sending specific data. Assumes its in the common format"""
+        if not kwargs.get('bucket', None):
+            raise KeyError("Expected to have bucket name passed in")
+        self.api.write(bucket=kwargs['bucket'], record=self._generate_data(data))
+        return True
+
+    def send(self, data: ProcessedData) -> bool:
+        self.api.write(bucket=self.data_bucket, record=self._generate_data(data.data))
+        self.api.write(bucket=self.data_bucket, record=self._generate_data(data.all_meta_data))
+        return True
