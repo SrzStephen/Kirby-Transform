@@ -1,0 +1,39 @@
+{
+  "collector": "modemstats",
+  "data": [
+    {
+      "fields": {
+        "A_String": "string"
+      },
+      "tags": {
+        "test": "string",
+        "test2": 4
+      },
+      "timestamp": 1604250024
+    },
+    {
+      "fields": {
+        "string": "string1",
+        "string2": "string2"
+      },
+      "tags": {
+        "test": "string2",
+        "test2": 44
+      },
+      "timestamp": 1604250024
+    }
+  ],
+  "destination": "AWS-IOT",
+  "language": "rust",
+  "platform": "modem",
+  "uptime": 0,
+  "version": "1.0.0",
+  "meta_tags": {
+    "foo": 1,
+    "bar": "Baz"
+  },
+  "dat_tags": {
+    "baz": "Test",
+    "something": 1
+  }
+}

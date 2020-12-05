@@ -1,6 +1,6 @@
 from kirby_transform.schema.input.schema import NestedInputData, CommonInput
-#from kirby_transform.schema. import OutputDataSchema, OutputMetaSchema
-from typing import List, Optional
+# from kirby_transform.schema. import OutputDataSchema, OutputMetaSchema
+from typing import List, Optional, Any
 from time import time
 from kirby_transform import __version__
 from numbers import Number
@@ -10,6 +10,127 @@ from typing import Union
 from abc import abstractmethod
 
 logger = getLogger(__name__)
+
+
+class ProcessedData(object):
+    def __init__(self, data_level_metadata: List[dict], report_level_metadata: List[dict], data: List[dict]) -> None:
+        self.__data = data
+        self.__data_level_meta_data = data_level_metadata
+        self.__report_level_meta_data = report_level_metadata
+
+    @property
+    def all_meta_data(self) -> List[dict]:
+        return self.__data_level_meta_data.copy() + self.__report_level_meta_data.copy()
+
+    @property
+    def data(self) -> List[dict]:
+        return self.__data.copy()
+
+    @property
+    def report_level_meta_data(self) -> List[dict]:
+        return self.__report_level_meta_data.copy()
+
+    @property
+    def data_level_meta_data(self) -> List[dict]:
+        return self.__data_level_meta_data.copy()
+
+    def discard_strings(self):
+        """Discards strings in the ProcessedData object. Useful for things like OTSDB & Timestream"""
+
+        def trim_from(data: Union[List, dict]) -> Union[dict, list]:
+            def trim_strings_from_dict(d: dict) -> dict:
+                return {k: v for k, v in d.items() if type(v) is str}
+
+            if type(data) is list:
+                return [trim_strings_from_dict(x) for x in data]
+            if type(data) is dict:
+                return trim_strings_from_dict(data)
+            else:
+                raise TypeError(f"Data came in as {type(data)} should be list or dict")
+
+        trim_from(self.__data)
+        trim_from(self.__data_level_meta_data)
+        trim_from(self.__report_level_meta_data)
+
+
+class Processor(object):
+    def __init__(self):
+        self.ReportLevelSchema = CommonInput()
+        self.DataLevelSchema = NestedInputData()
+        self.OutputSchema = None
+
+    def _process(self, data: dict) -> Optional[ProcessedData]:
+        valid_data = self.__valid_data(data.copy())
+        if valid_data:
+            # Mutate
+            data = make_data(
+                data=valid_data.get('data'),
+                data_tags=valid_data.get('data_tags'),
+                collector=valid_data.get('collector'),
+                root_timestamp=valid_data.get('timestamp'),
+                version=valid_data.get('version'))
+
+            report_meta = make_meta_report_level(data=data,
+                                                 global_tags=valid_data.get('meta_tags'),
+                                                 uptime=valid_data.get('uptime'),
+                                                 messages=valid_data.get('messages'),
+                                                 collector=valid_data.get('collector'),
+                                                 destination=valid_data.get('destination'),
+                                                 language=valid_data.get('language'),
+                                                 platform=valid_data.get('platform'),
+                                                 timestamp=valid_data.get('timestamp'),
+                                                 version=valid_data.get('version'))
+
+            data_meta = make_meta_data_level(data, valid_data.get("meta_tags"))
+            return ProcessedData(data_level_metadata=data_meta,
+                                 report_level_metadata=report_meta,
+                                 data=data)
+
+
+        else:
+            return None
+
+    def process(self, data: dict) -> Optional[ProcessedData]:
+        """Used in case inherited classes need to overwrite this (eg dropping all strings)"""
+        return self._process(data)
+
+    def report_is_valid(self, report: dict) -> bool:
+        # Also checks whether there is _any_ valid data, so will reject no valid data fields
+        valid_data = self.__valid_data(report.copy())
+        return valid_data is not None and len(valid_data.get('data', 0)) != 0
+
+    def __valid_data(self, data: dict) -> Optional[dict]:
+        "Will return the report if correct and pull out  "
+        try:
+            d = data.copy()
+            validated_data = self.ReportLevelSchema.load(d)
+        except ValidationError:
+            logger.exception("Failure in root level report")
+            return None
+        return_reports = []
+        # Iterate through and return a list of good reports
+        for index, report in enumerate(validated_data['data']):
+            try:
+                return_reports.append(self.DataLevelSchema.load(report).copy())
+            except ValidationError as e:
+                logger.info(f"skipping entry {index} of {report['collector']} because {e}")
+                logger.debug(f"{report}")
+                continue
+        validated_data['data'] = return_reports
+        return validated_data
+
+    @staticmethod
+    @abstractmethod
+    def __generate_data(data: List[dict]) -> Any:
+        """Takes in an input and gets it in the defined format"""
+
+    @abstractmethod
+    def send(self, data: ProcessedData) -> bool:
+        """Used for sending everything"""
+
+    @abstractmethod
+    def send_data(self, data: List[dict], **kwargs) -> Optional[bool]:
+        """Sending specific data. Assumes its in the common format"""
 
 
 def count_text(d: dict) -> int:
@@ -25,8 +146,7 @@ def count_bool(d: dict) -> int:
 
 
 def make_data(data: List[dict], data_tags: dict, collector: str, version: str,
-              root_timestamp: Union[None, float] = None) -> List[
-    dict]:
+              root_timestamp: Union[None, float] = None) -> List[dict]:
     def inplace_add_tags(data: dict, collector: str, data_tags: Union[dict, None], version: str):
         """Add all the required tags to the data"""
         if type(data_tags) is dict:
@@ -46,7 +166,7 @@ def make_data(data: List[dict], data_tags: dict, collector: str, version: str,
     for item in data_copy:
         item['timestamp'] = root_timestamp if root_timestamp is not None else time()
         inplace_add_tags(data=item, collector=collector, data_tags=data_tags, version=version)
-        assert(item['timestamp'] is not None)
+        assert (item['timestamp'] is not None)
     return data_copy
 
 
@@ -59,7 +179,7 @@ def make_meta_report_level(data: List[dict],
                            language: str,
                            platform: str,
                            version: str,
-                           timestamp: [float, None]) -> dict:
+                           timestamp: [float, None]) -> List[dict]:
     """should be called after on the data from make_data"""
     d = data.copy()
     numeric_metrics = 0
@@ -67,7 +187,6 @@ def make_meta_report_level(data: List[dict],
     total_metrics = 0
     text_metrics = 0
     total_tags = 0
-    return_items = list
     report_time = timestamp if timestamp is not None else time()
     for item in d:
         fields: dict = item['fields']
@@ -101,12 +220,12 @@ def make_meta_report_level(data: List[dict],
     )
     if global_tags is not None:
         top_level_tags.update(global_tags)
-
-    return dict(
+    # returning a list of single dict here because everything else is a list of dict, so makes manipulation a lot easier
+    return [dict(
         fields=top_level_metrics,
         tags=top_level_tags,
         timestamp=report_time
-    )
+    )]
 
 
 def make_meta_data_level(data: List[dict], top_level_tags: Union[dict, None]) -> List[dict]:
@@ -131,120 +250,3 @@ def make_meta_data_level(data: List[dict], top_level_tags: Union[dict, None]) ->
             timestamp=timestamp
         ))
     return return_data
-
-
-class Processor(object):
-    """I have a chicken and egg probkem. I would like to include the report in the initing of the processor
-    But then it becomes a giant pain for anything inheriting it to expose funtions
-    So I'm splitting out the actual processor and its processing"""
-
-    def __init__(self):
-
-        self.InputSchema = CommonInput()
-        self.processed = False
-        # Placeholders, get populated when process is called
-        self.__data: [List[dict]] = []
-        self.__meta_data: [List[dict]] = []
-        self.__report_level_meta: dict = {}
-        self.__data_level_meta: List[dict] = []
-
-    def process(self, report: dict):  # TODO support filepaths + IO + string dicts
-        try:
-            self.__original_report = report.copy()
-            self.__converted_report = CommonInput().load(self.__original_report)
-        except ValidationError as e:
-            logger.error(f"Failed to generate a proper report \n {self.__original_report} \n {e}")
-            raise
-
-        self.generate_data()
-        self.generate_meta()
-        self.processed = True
-        return self
-
-    def generate_data(self):
-        d = self.__converted_report
-        data = make_data(
-            data=d.get('data'),
-            data_tags=d.get('data_tags'),
-            collector=d.get('collector'),
-            root_timestamp=d.get('timestamp'),
-            version=d.get('version'))
-        self.__data = data
-
-    def generate_meta(self):
-        d = self.__converted_report
-        self.__report_level_meta = make_meta_report_level(data=self.__data,
-                                                          global_tags=d.get('meta_tags'),
-                                                          uptime=d.get('uptime'),
-                                                          messages=d.get('messages'),
-                                                          collector=d.get('collector'),
-                                                          destination=d.get('destination'),
-                                                          language=d.get('language'),
-                                                          platform=d.get('platform'),
-                                                          timestamp=d.get('timestamp'),
-                                                          version=d.get('version'))
-
-        self.__data_level_meta = make_meta_data_level(self.__data, d.get("meta_tags"))
-
-    @property
-    def data(self):
-        if not self.processed:
-            raise ValueError("You need to call process before trying to get data")
-        return self.__data.copy()
-
-    @property
-    def meta_data(self):
-        if not self.processed:
-            raise ValueError("You need to call process before trying to get data")
-        return_data = self.__data_level_meta.copy()
-        return_data.append(self.__report_level_meta.copy())
-        return return_data
-
-    @property
-    def report_meta_data(self):
-        if not self.processed:
-            raise ValueError("You need to call process before trying to get data")
-        return self.__report_level_meta.copy()
-
-    @property
-    def data_meta_data(self):
-        if not self.processed:
-            raise ValueError("You need to call process before trying to get data")
-        return self.__data_level_meta.copy()
-
-    @property
-    def parsed_report(self):
-        if not self.processed:
-            raise ValueError("You need to call process before trying to get data")
-        return self.__converted_report.copy()
-
-    @staticmethod
-    def get_input_validator():
-        return CommonInput()
-
-    @staticmethod
-    def get_output_data_validator():
-        raise NotImplementedError
-        #return OutputDataSchema()
-
-    @staticmethod
-    def get_metadata_schemas():
-        raise NotImplementedError
-        #return OutputMetaSchema()
-
-    @staticmethod
-    def report_is_valid(data: dict):
-        try:
-            Processor.get_input_validator().load(data)
-            return True
-        except Exception as e:
-            logger.warning(f"Failed to parse with error {e}")
-            return False
-
-    @abstractmethod
-    def generate_output(self, data: List[dict]):
-        raise NotImplementedError
-
-    @abstractmethod
-    def send_all(self) -> bool:
-        raise NotImplementedError
