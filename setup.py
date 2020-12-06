@@ -7,7 +7,7 @@ with open(path.join(here, 'readme.md'), encoding='utf-8') as f:
 
 setup(
     name="kirby_transform",
-    version="0.0.6",
+    version="0.1.0",
     description="Transformation middleware for project Kirby",
     long_description_content_type="text/markdown",
     url="TODO",
