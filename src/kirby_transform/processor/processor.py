@@ -6,7 +6,7 @@ from kirby_transform import __version__
 from numbers import Number
 from marshmallow import ValidationError
 from logging import getLogger
-from typing import Union
+from typing import Union, Type
 from abc import abstractmethod
 
 logger = getLogger(__name__)
@@ -34,23 +34,22 @@ class ProcessedData(object):
     def data_level_meta_data(self) -> List[dict]:
         return self.__data_level_meta_data.copy()
 
-    def discard_strings(self):
-        """Discards strings in the ProcessedData object. Useful for things like OTSDB & Timestream"""
+    def discard_strings(self) -> None:
+        def trim_dict(data: dict) -> dict:
+            return {k: v for k, v in data['fields'].items() if type(v) is not str}
 
-        def trim_from(data: Union[List, dict]) -> Union[dict, list]:
-            def trim_strings_from_dict(d: dict) -> dict:
-                return {k: v for k, v in d.items() if type(v) is str}
+        """Discards string fields in the ProcessedData object. Useful for things like OTSDB & Timestream"""
 
+        def trim_from(data: list) -> List:
             if type(data) is list:
-                return [trim_strings_from_dict(x) for x in data]
-            if type(data) is dict:
-                return trim_strings_from_dict(data)
-            else:
-                raise TypeError(f"Data came in as {type(data)} should be list or dict")
+                for item in data:
+                    if item.get('fields', None):
+                        item['fields'] = trim_dict(item)
+                return data
 
-        trim_from(self.__data)
-        trim_from(self.__data_level_meta_data)
-        trim_from(self.__report_level_meta_data)
+        self.__data = trim_from(self.__data)
+        self.__data_level_meta_data = trim_from(self.__data_level_meta_data)
+        self.__report_level_meta_data = trim_from(self.__report_level_meta_data)
 
 
 class Processor(object):
@@ -250,3 +249,12 @@ def make_meta_data_level(data: List[dict], top_level_tags: Union[dict, None]) ->
             timestamp=timestamp
         ))
     return return_data
+
+
+def remove_type(d: dict, type_to_remove: Union[Type[str], Type[None]]):
+    if isinstance(d, dict):
+        for key in list(d.keys()):
+            if type(key) is type(type_to_remove):  # Can't figure out a better NoneType
+                del d[key]
+            else:
+                remove_type(d[key], type_to_remove)

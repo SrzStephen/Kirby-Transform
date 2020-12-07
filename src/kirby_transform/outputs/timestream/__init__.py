@@ -1,2 +1,1 @@
-from kirby_transform.outputs.influx2.process import InfluxAPI
 from kirby_transform.outputs.timestream.process import TimestreamPush

@@ -2,17 +2,19 @@ git:
   depth: 3
 language: python
 services:
-  - docker
+- docker
 before_install:
-  - docker pull quay.io/influxdb/influxdb:v2.0.1
+- docker pull quay.io/influxdb/influxdb:v2.0.1
 python:
-  - "3.6"      # current default Python on Travis CI
-  - "3.7"
-  - "3.8"
-# command to install dependencies
+- '3.6'
+- '3.7'
+- '3.8'
 install:
-  - pip install -r requirements.txt
-  - pip install .
-# command to run tests
+- pip install -r requirements.txt
+- pip install .
 script:
-  - pytest
+- pytest
+env:
+  global:
+  - secure: IZFWSVQGBa4JvbdmZ/YbmCt2SsvYQJ2rMAoRQ91WmnqJDypyBlC5QBpvFXZsBrW2d0V8uiBH1Hralt8FebIhfEivd/ZkCp4DcU8FFBYmQdaowDeB1sp5gna6r67nn/6sfbrvxsG6IoBZtkDOelT8OnUWVfGYM4k0xgRBVXrOD60okwUDAY1iXHj/OvMc8cOlUWKXer99uIkuBcf7S5KOYQNbbtNAK8l0JfXEXOI0P54uUPbe/s6YkBbrO54CaHnKVmzmG+lwpFH6VcnwWnBLd8Pa1obVCAAYpMxl9fULap/lCYLJ220kq+/1aFu3MwLCEn5BdM39Xj5glI5sdoIS72R/p/KjxRD/Yr9dgaA10K3tnmQApmM2IzeUa7D7xHl7QWxLlkzETf6MnnKN2xs/3ZFSRHN6P0v2N8POp71WI86Fdue6FoY7PPaVT8/dTu0DneaUy3ZJjJ5TMTrF4NEUYEHLTn2yp00eBMPLCFK64er5zIFIWptY/mu6wB5DRqkTOvdbnhFGdrAX8Jbxc1kggFeXEB9CNMmzxZMXLzoTmWIkW4d4Uhk8n2X8Mda2Hvv4yQB+H45e+/jqlVP3q/F3gEmhbK+A47NkYdGCoRbP6sljaFze1urk6GdDj89JYfMKmnMI0ZwMGtOQJt8nDHJwzuHyrBEZGjY3Rfe//mhY2a4=
+  - secure: bzDal/kghwIjwpLtC+sPIEcl4LLbFjxZwPA3ytr1lCZCf7Eeh1xGyOPicNFmEJkMtWQtadZiTBZtdshUk5V4eBpC7AlCa4+pvr2339qakwzs7Vbkc5PcCBL+Ud0KFOVeeoFndbAUcKQYm5WXUBBR1Q4f2Z/b2khPaH1DC/Po1iQnXervfSQOse+5mPkzSlvdbryVc8ZHwRgjyhzqWrdhvAeX77Y7KUHaGGTpy4pACpMIo1eYeXLAdNf3IKbXUmnypJbl4lYiBwbXTHMjX5/0rr7ZP6W//oyuAQ26LG2l2Yx56yUEmMXCrH/NCfTg2ESnzLcaKIUas8nHxiOp26e+ELznbzJQ7+gCg+OAo6nE7qxp1NscOg4unROzmx51rtvIRl4uPv9KVaIfe6CyFQoVImEKELGUs42UMDOt6ayaJ26TE3eKths0v6q6+eIKB1I3xG3FKK93Xf5MnNFlde4+PwdHONR+ShQORfurx1QHeB39i3t0/NvHLOZ647fvkHDsSdOj47q6W46f8qeQhRm4dIt45t9yGXzKnRhZH48+PThdSDhbKpyJhbB7zPNrIXpPZ+Kz/YBkEPK4oFTu0VcoRb0+Fi4idGDZzxrkmue0K6I4rB0NlHF6s9lczk4bHXyC5M77ea9ajiZuWdXvHQ2kiObJk6jHITdZtC9jQsoycIc=
