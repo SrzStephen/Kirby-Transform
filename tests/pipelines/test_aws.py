@@ -8,11 +8,14 @@ from os import environ
 from pathlib import Path
 from kirby_transform import Processor
 from importlib.machinery import SourceFileLoader
-from ..test_influx2.test_influx2 import IntegrationTest
+from ..test_influx2.test_influx2 import IntegrationTest as InfluxIntegration
+from ..test_timestream.test_timestream import TestIntegration as TimestreamIntegration
 from time import sleep
-
+from random import randint
 data_dir = Path(__file__).parent.parent.absolute() / 'data'
-from kirby_transform.outputs import InfluxAPI
+base_lambda_path = Path(__file__).parent.parent.parent / "lambda" / "src"
+
+from kirby_transform.outputs import InfluxAPI, TimestreamPush
 
 
 class FakeContext:
@@ -41,13 +44,13 @@ class TestLambdaHelper(TestCase):
             self.assertIsNotNone(Processor().process(enriched_event))
 
 
-class TestInflux(IntegrationTest):
+class TestInflux(InfluxIntegration):
     @classmethod
     def setUpClass(cls) -> None:
         # It'll rerun the tests but I need the classmethod from IntegrationTest to be init'd
         # Todo multi class inheretence with the test_influx2 so that I dont need to do this.
         super(TestInflux, cls).setUpClass()
-        cls.influx_path = Path(__file__).parent.parent.parent / "lambda" / "src" / "influx2.py"
+        cls.influx_path = base_lambda_path / "influx2.py"
         # set environment variables before loading in the lambda module
         environ['INFLUX_URL'] = cls.influx_ci_config['url']
         environ['INFLUX_TOKEN'] = cls.influx_ci_config['token']
@@ -79,10 +82,36 @@ class TestInflux(IntegrationTest):
         for filename, data in list(get_sucessful_files(data_dir)):
             self.influx_lambda(data, FakeContext())
 
-        for _ in range(0, 50):  # 2.5s
+        for _ in range(0, 100):  # 5s
             sleep(0.05)
             results = self.influx_api.client.query_api().query(query=query, org=environ['INFLUX_ORG'])
             if len(results) > 0:
                 passed = True
                 break
         self.assertTrue(passed, msg="The influx query failed to find data tagged with the lambda")
+
+
+class TestTimestream(TimestreamIntegration):
+    @classmethod
+    def setUpClass(cls) -> None:
+        # It'll rerun the tests but I need the classmethod from IntegrationTest to be init'd
+        super(TestTimestream, cls).setUpClass()
+        cls.timestream_path = base_lambda_path / "timestream.py"
+        # Not secret
+        environ['TIMESTREAM_META_TABLE'] = "testtable"
+        environ['TIMESTREAM_DATA_TABLE'] = "testtable"
+        environ['TIMESTREAM_DATABASE'] = "testdb"
+        environ['AWS_TIMESTREAM_REGION'] = 'us-east-1'
+
+        cls.timestream_module = SourceFileLoader(fullname='timestream_lambda',
+                                                 path=str(cls.timestream_path.absolute())).load_module()
+        cls.timestream_lambda = cls.timestream_module.TestHelper
+        cls.timestream: TimestreamPush = cls.timestream_lambda.get_timestream_instance()
+
+    def test_lambda(self):
+        passed = False
+        context = FakeContext()
+        context.function_name = f"foo{randint(0,9999)}"
+        for filename, data in list(get_sucessful_files(data_dir)):
+            self.timestream_lambda(event=data, context=context)
+        self.timestream.read_client.query(QueryString=f"""SELECT * FROM "testdb"."testtable" WHERE function_name = '{context.function_name}' ORDER BY time DESC LIMIT 1 """)
