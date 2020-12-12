@@ -74,6 +74,7 @@ class IntegrationTest(TestCase):
             cls.client = docker.from_env()
             cls.running_container = cls.__run_container(cls.client, CONTAINER_TO_RUN,
                                                         timeout=TIME_TO_WAIT_FOR_CONTAINER_RESPONSE)
+            cls.influx_ci_config = INFLUX_API_CONFIG
         except Exception:
             if cls.running_container is not None:
                 print(f"Tearing down container {cls.running_container.image}")
@@ -159,7 +160,7 @@ class IntegrationTest(TestCase):
             query_api = self.InfluxClient.client.query_api()
             bucket = INFLUX_CI_CONFIG['b']
             collector = data['collector']
-            query_string = f'from(bucket:"{bucket}")|> range(start: -1y)|> filter(fn:(r) => r._measurement == "{collector}")'
+            query_string = f'from(bucket:"{bucket}")|> range(start: -100y)|> filter(fn:(r) => r._measurement == "{collector}")'
             start_time = time()
             query_result = 0
             while time() - start_time < 10:

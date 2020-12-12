@@ -37,6 +37,10 @@ class InfluxAPI(Processor):
                                                                     write_scheduler=ThreadPoolScheduler(
                                                                         max_workers=workers)))
 
+    def __del__(self):
+        # Cleanup connection
+        self.client.close()
+
     def check_bucket_exists(self, bucket_name: str) -> bool:
         return self.client.buckets_api().find_bucket_by_name(bucket_name=bucket_name)
 
