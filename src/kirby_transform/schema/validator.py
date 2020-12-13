@@ -1,6 +1,7 @@
-from typing import Any, Union
-from marshmallow.validate import Validator, ValidationError
 from datetime import datetime
+from typing import Any
+
+from marshmallow.validate import ValidationError, Validator
 
 
 class UnixEpoch(Validator):

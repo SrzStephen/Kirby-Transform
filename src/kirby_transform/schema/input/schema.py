@@ -1,8 +1,8 @@
 from marshmallow import Schema
+from marshmallow.fields import Dict, Float, Int, List, Nested, String
 from marshmallow.schema import EXCLUDE, INCLUDE
-from marshmallow.fields import Dict, Float, String, Int, List, Nested
-from kirby_transform.schema.validator import UnixEpoch, FieldValidator
 
+from kirby_transform.schema.validator import FieldValidator, UnixEpoch
 
 # Don't include typing in here because some of the namespaces conflict
 

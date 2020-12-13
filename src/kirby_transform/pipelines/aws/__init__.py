@@ -1,12 +1,16 @@
-from kirby_transform import Processor, ValidationError
-from kirby_transform.pipelines.aws.env_vars import UNKNOWN_ERROR_SQS, VALIDATION_FAILED_SQS
-from typing import Optional
-from aws_lambda_context import LambdaContext
-from mypy_boto3_sqs.client import SQSClient
-from mypy_boto3_sqs.type_defs import MessageAttributeValueTypeDef as SQSAttribute
-from boto3 import client
 from json import dumps
 from logging import getLogger
+from typing import Optional
+
+from aws_lambda_context import LambdaContext
+from boto3 import client
+from mypy_boto3_sqs.client import SQSClient
+from mypy_boto3_sqs.type_defs import \
+    MessageAttributeValueTypeDef as SQSAttribute
+
+from kirby_transform import Processor, ValidationError
+from kirby_transform.pipelines.aws.env_vars import (UNKNOWN_ERROR_SQS,
+                                                    VALIDATION_FAILED_SQS)
 
 logger = getLogger(__name__)
 
@@ -45,14 +49,16 @@ class LambdaHelpers:
         """Base parser that runs deals with the AWS side of things"""
         logger.debug(msg=f"Got context \n {self.context} \n Event \n {self.event}")
         try:
-            Processor().process(data=self.event)
-        except ValidationError as e:
-            logger.info(f"failed to parse message {self.event} \n from {self.context}")
-            self.write_message_to_sqs(queue_name=VALIDATION_FAILED_SQS())
-            raise
+             processed = Processor().process(data=self.event)
 
         except Exception as e:
             logger.info(f"Programming error detected in Processor")
             self.write_message_to_sqs(queue_name=UNKNOWN_ERROR_SQS())
             raise
+        if processed is None:
+            # Because ValidationError gets printed automatically.
+            logger.info(f"failed to parse message {self.event} \n from {self.context}")
+            self.write_message_to_sqs(queue_name=VALIDATION_FAILED_SQS())
+            Processor().ReportLevelSchema.load(self.event) # force the exception back up the stack
+            raise ValueError("Input generated an unknown output. Not a validation errror")
         return self.event_with_metadata()

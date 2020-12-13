@@ -1,9 +1,9 @@
-from pathlib import Path
-from typing import List, Tuple, Generator
+from itertools import combinations
 from json import load
+from pathlib import Path
+from typing import Generator, List, Tuple
 
 from ..schema import CommonInput, NestedInputData
-from itertools import combinations
 
 
 def singleline_open(path: Path) -> dict:

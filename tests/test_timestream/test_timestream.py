@@ -1,12 +1,14 @@
+from datetime import datetime, timedelta, timezone, tzinfo
+from pathlib import Path
+from time import mktime, time
+from unittest import TestCase
+
+import pytz
+from boto3.session import Session
+from knobs import Knob
+
 from kirby_transform.outputs import TimestreamPush
 from kirby_transform.test import get_sucessful_files
-from unittest import TestCase
-from knobs import Knob
-from boto3.session import Session
-from time import time, mktime
-from datetime import datetime, timezone, timedelta, tzinfo
-import pytz
-from pathlib import Path
 
 data_dir = Path(__file__).parent.parent.absolute() / 'data'
 
@@ -15,20 +17,25 @@ def get_current_timezone() -> tzinfo:
     return datetime.now(timezone(timedelta(0))).astimezone().tzinfo
 
 
-class TestIntegration(TestCase):
-    def setUp(self) -> None:
+class TimestreamTest(object):
+    @classmethod
+    def setup_timestream(cls):
         fields = dict(single_write_test=1)
         tags = dict(collector="test_timestream",
                     some_tag="tag2")
-        self.dummy_payload = [dict(tags=tags, fields=fields, timestamp=time())]
-        self.AWS_Session = Session(region_name='us-east-1')
-        self.client = TimestreamPush(boto_session=self.AWS_Session, meta_table='testtable', data_table='testtable',
-                                     database='testdb')
-        self.test_query = """
+        cls.dummy_payload = [dict(tags=tags, fields=fields, timestamp=time())]
+        cls.AWS_Session = Session(region_name='us-east-1')
+        cls.client = TimestreamPush(boto_session=cls.AWS_Session, meta_table='testtable', data_table='testtable',
+                                    database='testdb')
+        cls.test_query = """
             SELECT time FROM "testdb"."testtable"
             where measure_name = 'single_write_test'
             ORDER BY time DESC LIMIT 1 
         """
+
+class TestIntegration(TestCase, TimestreamTest):
+    def setUp(self) -> None:
+        super(TestIntegration, self).setup_timestream()
 
     def test_stuff_exists(self):
         try:
