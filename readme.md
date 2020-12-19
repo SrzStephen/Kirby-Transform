@@ -2,16 +2,32 @@
 ![](https://66.media.tumblr.com/tumblr_lpc46oU6Cy1qi1pnpo1_500.gifv)
 
 > Kirby is an extremely strong circle, and that's all the explanation I need.
+
 ## About
-Kirby Transform is middleware used to define a common input data format, some common transformational logic and 
-some (mostly) self contained classes to help me push data to various data sources which can then be integrated 
-into different platforms (eg AWS Lambda, Azure Function, OpenFaaS, K8s Docker containers).
+Kirby Transform is middleware used to define a common data format and transformation logic to make it easier for me to
+build IOT pipelines. This transformation logic is split into:
+
+### Preprocessor
+The preprocessor is responsible for:
+* Input validation
+* Generating a set of data points, and metadata that is useful for tracking/debugging.
+* Generating a common output format to be used down the line to send to specific data sources.
+
+### Outputs
+Outputs should be (mostly) self contained ways of generating data in the required format and sending data to 
+storage solutions.
+
+#### Currently Implemented:
+- InfluxDB2
+- AWS Timestream
+
+
 ## Motivation
 I'm finding that I'm spending a lot of time creating and maintaining IOT Device -> Data Sink pipelines compared 
 to creating the devices themselves. 
 
 By ensuring that things will *just work* if I put the data in a common input format, I should be able to build the 
-pipeline once and have something reasonably low maintenance, especially if I spend some time upfront writing tests.
+pipeline once and have something reasonably low maintenance.
 
 ## Format
 ### Top level
@@ -52,14 +68,15 @@ fields: Dictonary [Required]
 timestamp: Unix Epoch [Optional]
     Timestamp for the data (Resolution in seconds).  If this is missing then the report timestamp will be used
 ```
-## Preprocessor
-The preprocessor is responsible for:
-* Input validation
-* Generating a set of data points, and metadata that is useful for tracking/debugging.
-* Generating a common output format *#TODO schema validation* to be used down the line to send to specific data sources
 
-## Outputs
-Outputs should be (mostly) self contained ways of generating data in a specific format and giving the ability to send 
-data to various sources (InfluxDB, Timestream)
-* Influx2: Send to InfluxDB version 2.
-* Timestream #ToDo: Send to AWS Timestream
+### Examples
+The best place to look for examples is in the ```tests``` folder. There are examples of data and how to use, 
+wrapped up as test cases.
+
+### Structure
+As this is middleware for very inter related projects, this how I'm expecting to structure the project:
+* This package is uploaded to PiPi
+* Things that depend on this package (Eg Lambdas) should be put in their own repo, being submoduled to this one to make 
+testing everything significantly easier.
+* Dependent packages should be pinned to a specific Kirby Transform version, and should be updated as needed.
+
