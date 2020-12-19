@@ -1,11 +1,12 @@
-from boto3 import client, Session
+from operator import itemgetter
+from typing import Any, List, Optional
+
+from boto3 import Session, client
 from botocore.config import Config
-from kirby_transform.processor import Processor, ProcessedData
-from knobs import Knob
-from typing import Optional, List, Any
 from mypy_boto3_timestream_query.client import TimestreamQueryClient
 from mypy_boto3_timestream_write.client import TimestreamWriteClient
-from operator import itemgetter
+
+from kirby_transform.processor import ProcessedData, Processor
 
 
 class TimestreamPush(Processor):

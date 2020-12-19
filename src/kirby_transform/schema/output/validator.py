@@ -1,11 +1,11 @@
-from typing import Any, Union
-from marshmallow.validate import Validator, ValidationError
-from datetime import datetime
+from typing import Any
+
+from marshmallow.validate import ValidationError, Validator
+
 
 class OutputTagValidator(Validator):
     def __init__(self):
         self.important_keys = ["source", "version", "collector", "platform"]
-        pass
 
     def __call__(self, value: dict, **kwargs) -> Any:
         missing_keys = []

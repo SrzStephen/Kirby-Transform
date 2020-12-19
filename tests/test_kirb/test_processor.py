@@ -1,10 +1,13 @@
-from kirby_transform.test import get_sucessful_files, input_combinations
-from kirby_transform.processor import make_data, make_meta_data_level, make_meta_report_level, Processor, ProcessedData
-from kirby_transform.schema import CommonInput, NestedInputData
-from unittest import TestCase
-from time import time
-from pathlib import Path
 from io import StringIO
+from pathlib import Path
+from time import time
+from unittest import TestCase
+
+from kirby_transform.processor import (ProcessedData, Processor, make_data,
+                                       make_meta_data_level,
+                                       make_meta_report_level)
+from kirby_transform.schema import CommonInput, NestedInputData
+from kirby_transform.test import get_sucessful_files, input_combinations
 
 data_dir = Path(__file__).parent.parent.absolute() / 'data'
 

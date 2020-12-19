@@ -1,7 +1,9 @@
-from kirby_transform.test import get_sucessful_files, input_combinations
-from json import load, JSONDecodeError
-from unittest import TestCase
+from json import JSONDecodeError, load
 from pathlib import Path
+from unittest import TestCase
+
+from kirby_transform.test import get_sucessful_files, input_combinations
+
 data_dir = Path(__file__).parent.parent.absolute() / 'data'
 
 class TestBasic(TestCase):

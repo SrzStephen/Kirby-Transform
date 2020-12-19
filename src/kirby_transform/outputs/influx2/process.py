@@ -1,13 +1,14 @@
-from kirby_transform.processor import Processor
-from kirby_transform import ProcessedData
-from typing import Optional
-from influxdb_client import WritePrecision, InfluxDBClient, Point, WriteOptions
-from rx.scheduler import ThreadPoolScheduler
-from multiprocessing import cpu_count
-from typing import List
-from logging import getLogger
-from operator import itemgetter
 from datetime import datetime, timezone
+from logging import getLogger
+from multiprocessing import cpu_count
+from operator import itemgetter
+from typing import List, Optional
+
+from influxdb_client import InfluxDBClient, Point, WriteOptions, WritePrecision
+from rx.scheduler import ThreadPoolScheduler
+
+from kirby_transform import ProcessedData
+from kirby_transform.processor import Processor
 
 logger = getLogger(__name__)
 
@@ -36,6 +37,10 @@ class InfluxAPI(Processor):
                                                                     retry_interval=2000,
                                                                     write_scheduler=ThreadPoolScheduler(
                                                                         max_workers=workers)))
+
+    def __del__(self):
+        # Cleanup connection
+        self.client.close()
 
     def check_bucket_exists(self, bucket_name: str) -> bool:
         return self.client.buckets_api().find_bucket_by_name(bucket_name=bucket_name)

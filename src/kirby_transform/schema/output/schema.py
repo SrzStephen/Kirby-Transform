@@ -1,7 +1,10 @@
 from marshmallow import Schema
-from marshmallow.fields import Dict, Float, String, Nested # I have an object called "fields" in my data
-from kirby_transform.schema.validator import UnixEpoch
+from marshmallow.fields import (  # I have an object called "fields" in my data
+    Dict, Float, Nested, String)
 from marshmallow.schema import EXCLUDE, INCLUDE
+
+from kirby_transform.schema.validator import UnixEpoch
+
 from .validator import OutputTagValidator
 
 
@@ -24,4 +27,3 @@ class OutputDataSchema(Schema):
     class Meta:
         unknown = INCLUDE
 
-    pass

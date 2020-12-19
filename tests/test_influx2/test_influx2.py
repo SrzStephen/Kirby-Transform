@@ -1,13 +1,15 @@
+from datetime import datetime
+from operator import itemgetter
+from pathlib import Path
+from time import sleep, time
+from unittest import TestCase
+
 import docker
 import requests
-from time import time, sleep
-from operator import itemgetter
-from unittest import TestCase
-from kirby_transform.test import get_sucessful_files
+from influxdb_client import Point, WritePrecision
+
 from kirby_transform.outputs import InfluxAPI
-from influxdb_client import WritePrecision, Point
-from datetime import datetime
-from pathlib import Path
+from kirby_transform.test import get_sucessful_files
 
 data_dir = Path(__file__).parent.parent.absolute() / 'data'
 CONTAINER_TO_RUN = "quay.io/influxdb/influxdb:v2.0.1"
@@ -34,10 +36,9 @@ INFLUX_API_CONFIG = dict(
 )
 
 
-class IntegrationTest(TestCase):
-
+class ContainerHelpers(object):
     @classmethod
-    def __run_container(cls, docker_client: docker.DockerClient, container_name: str, timeout: int):
+    def run_container(cls, docker_client: docker.DockerClient, container_name: str, timeout: int):
         image = cls.client.images.pull(container_name)
         port = {'8086/tcp': ('127.0.0.1', 8086)}
         for container in docker_client.containers.list():
@@ -66,14 +67,25 @@ class IntegrationTest(TestCase):
                 # Don't care about http errors
                 pass
         return running_container
+    @classmethod
+    def tear_down_container(cls):
+        try:
+            if cls.running_container is not None:
+                print(f"Tearing down container {cls.running_container.image}")
+                cls.running_container.stop()
+                cls.client.close()
+            else:
+                print("Influx container not running")
+        except AttributeError:
+            pass
 
     @classmethod
-    def setUpClass(cls) -> None:
+    def start_container(cls) -> None:
         try:
-            super(IntegrationTest, cls).setUpClass()
             cls.client = docker.from_env()
-            cls.running_container = cls.__run_container(cls.client, CONTAINER_TO_RUN,
+            cls.running_container = cls.run_container(cls.client, CONTAINER_TO_RUN,
                                                         timeout=TIME_TO_WAIT_FOR_CONTAINER_RESPONSE)
+            cls.influx_ci_config = INFLUX_API_CONFIG
         except Exception:
             if cls.running_container is not None:
                 print(f"Tearing down container {cls.running_container.image}")
@@ -81,14 +93,18 @@ class IntegrationTest(TestCase):
                 cls.client.close()
             raise
 
+
+
+
+class IntegrationTest(TestCase, ContainerHelpers):
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        super(IntegrationTest, cls).start_container()
+
     @classmethod
     def tearDownClass(cls) -> None:
-        if cls.running_container is not None:
-            print(f"Tearing down container {cls.running_container.image}")
-            cls.running_container.stop()
-            cls.client.close()
-        else:
-            print("Influx container not running")
+        cls.tear_down_container()
 
     def setUp(self) -> None:
         # because InfluxClient can be mutated, reset it every time we run a test
@@ -159,7 +175,7 @@ class IntegrationTest(TestCase):
             query_api = self.InfluxClient.client.query_api()
             bucket = INFLUX_CI_CONFIG['b']
             collector = data['collector']
-            query_string = f'from(bucket:"{bucket}")|> range(start: -1y)|> filter(fn:(r) => r._measurement == "{collector}")'
+            query_string = f'from(bucket:"{bucket}")|> range(start: -100y)|> filter(fn:(r) => r._measurement == "{collector}")'
             start_time = time()
             query_result = 0
             while time() - start_time < 10:

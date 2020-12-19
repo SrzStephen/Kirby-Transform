@@ -1,13 +1,14 @@
-from kirby_transform.schema.input.schema import NestedInputData, CommonInput
-# from kirby_transform.schema. import OutputDataSchema, OutputMetaSchema
-from typing import List, Optional, Any
-from time import time
-from kirby_transform import __version__
-from numbers import Number
-from marshmallow import ValidationError
-from logging import getLogger
-from typing import Union, Type
 from abc import abstractmethod
+from logging import getLogger
+from numbers import Number
+from time import time
+# from kirby_transform.schema. import OutputDataSchema, OutputMetaSchema
+from typing import Any, List, Optional, Type, Union
+
+from marshmallow import ValidationError
+
+from kirby_transform import __version__
+from kirby_transform.schema.input.schema import CommonInput, NestedInputData
 
 logger = getLogger(__name__)
 
@@ -57,6 +58,10 @@ class Processor(object):
         self.ReportLevelSchema = CommonInput()
         self.DataLevelSchema = NestedInputData()
         self.OutputSchema = None
+
+    @staticmethod
+    def get_version() -> str:
+        return __version__
 
     def _process(self, data: dict) -> Optional[ProcessedData]:
         valid_data = self.__valid_data(data.copy())

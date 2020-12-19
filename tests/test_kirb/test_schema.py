@@ -1,9 +1,13 @@
-from kirby_transform.test import get_sucessful_files
-from kirby_transform.schema import CommonInput, NestedInputData, ValidationError, FieldValidator, UnixEpoch
-from unittest import TestCase
 from json import load
-from typing import List, Tuple
 from pathlib import Path
+from typing import List, Tuple
+from unittest import TestCase
+
+from kirby_transform.schema import (CommonInput, FieldValidator,
+                                    NestedInputData, UnixEpoch,
+                                    ValidationError)
+from kirby_transform.test import get_sucessful_files
+
 data_dir = Path(__file__).parent.parent.absolute() / 'data'
 
 class InputSchemaTest(TestCase):
