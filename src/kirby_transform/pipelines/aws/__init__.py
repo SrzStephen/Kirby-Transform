@@ -10,7 +10,8 @@ from mypy_boto3_sqs.type_defs import \
 
 from kirby_transform import Processor, ValidationError
 from kirby_transform.pipelines.aws.env_vars import (UNKNOWN_ERROR_SQS,
-                                                    VALIDATION_FAILED_SQS)
+                                                    VALIDATION_FAILED_SQS,
+                                                    SQS_REGION)
 
 logger = getLogger(__name__)
 
@@ -20,7 +21,7 @@ class LambdaHelpers:
         self.context = context
         self.event = event
 
-    def write_message_to_sqs(self, queue_name: str, region_name: str = 'us-east-1') -> None:
+    def write_message_to_sqs(self, queue_name: str, region_name: str = SQS_REGION()) -> None:
         attributes = dict(
             function_name=SQSAttribute(DataType="String", StringValue=self.context.function_name),
             function_version=SQSAttribute(DataType="String", StringValue=self.context.function_version)

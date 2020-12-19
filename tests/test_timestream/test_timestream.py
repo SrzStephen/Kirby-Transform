@@ -32,7 +32,6 @@ class TimestreamTest(object):
             where measure_name = 'single_write_test'
             ORDER BY time DESC LIMIT 1 
         """
-
 class TestIntegration(TestCase, TimestreamTest):
     def setUp(self) -> None:
         super(TestIntegration, self).setup_timestream()
