@@ -3,10 +3,15 @@ from pygit2 import Repository
 from kirby_transform import __version__
 from johnnydep import JohnnyDist
 from subprocess import CalledProcessError
-from os import popen
+from os import popen, environ
+
 # Definitions because I can't remember that
 DEV_PIPI = 'https://test-files.pythonhosted.org'
 PIPI = 'https://files.pythonhosted.org'
+
+
+def is_running_on_travisci() -> bool:
+    return environ.get('TRAVIS', False)
 
 
 class GitHelpers(object):
@@ -20,6 +25,8 @@ class GitHelpers(object):
 
     @staticmethod
     def get_current_branch() -> str:
+        if is_running_on_travisci():
+            return environ.get('TRAVIS_BRANCH', "")
         return popen('git branch --show-current').read().replace('\n', '')
 
 

@@ -1,1 +1,1 @@
-from kirby_transform.release.release_helpers import GitHelpers, VersionHelper, PIPI, DEV_PIPI
+from kirby_transform.release.release_helpers import GitHelpers, VersionHelper, PIPI, DEV_PIPI, is_running_on_travisci
