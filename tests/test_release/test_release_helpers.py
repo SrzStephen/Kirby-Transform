@@ -1,6 +1,6 @@
 from unittest import TestCase
 from pathlib import Path
-from kirby_transform.release.helpers import GitHelpers, VersionHelper, PIPI
+from kirby_transform.release import GitHelpers, VersionHelper, PIPI
 from kirby_transform import __version__
 from warnings import warn
 

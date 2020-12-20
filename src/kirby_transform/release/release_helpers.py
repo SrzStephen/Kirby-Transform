@@ -2,11 +2,8 @@ from pathlib import Path
 from pygit2 import Repository
 from kirby_transform import __version__
 from johnnydep import JohnnyDist
-from pip._internal.exceptions import DistributionNotFound
 from subprocess import CalledProcessError
 from os import popen
-import click
-
 # Definitions because I can't remember that
 DEV_PIPI = 'https://test-files.pythonhosted.org'
 PIPI = 'https://files.pythonhosted.org'
@@ -33,7 +30,7 @@ class VersionHelper(object):
         try:
             return __version__ in JohnnyDist(req_string=__package__, index_url=index_url)
         # Get these two errors if the dist doesn't exist
-        except (CalledProcessError, DistributionNotFound) as e:
+        except CalledProcessError as e:
             return False
 
     @staticmethod
