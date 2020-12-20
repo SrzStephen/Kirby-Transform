@@ -32,6 +32,8 @@ class TimestreamTest(object):
             where measure_name = 'single_write_test'
             ORDER BY time DESC LIMIT 1 
         """
+
+
 class TestIntegration(TestCase, TimestreamTest):
     def setUp(self) -> None:
         super(TestIntegration, self).setup_timestream()
@@ -56,7 +58,7 @@ class TestIntegration(TestCase, TimestreamTest):
         self.assertEqual(len(test_query['Rows']), 1, msg=f"Didn't return enough data from {test_query}")
         dt = datetime.strptime(test_query['Rows'][0]['Data'][0]['ScalarValue'][:-3], '%Y-%m-%d %H:%M:%S.%f')
         dt: datetime = pytz.timezone('UTC').localize(dt, is_dst=True)  # Localise to UTC
-        self.assertEqual(round(dt.timestamp(), 0), round(self.dummy_payload[0]['timestamp'], 0))
+        self.assertAlmostEqual(dt.timestamp(), self.dummy_payload[0]['timestamp'], delta=10)
         pass
 
     def test_basic_write(self):
