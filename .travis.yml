@@ -21,10 +21,19 @@ script:
     else echo $TRAVIS_PULL_REQUEST_BRANCH; fi)
   - echo "TRAVIS_BRANCH=$TRAVIS_BRANCH, PR=$PR, BRANCH=$BRANCH"
   - pytest
-deploy:
-  provider: pypi
-  username: __token__
-  password:
-    secure: W2xP4S3DkCkwWdumido0BhOI23ibd3m3NzFA1jHacK8EFhycmYhogmHgpLyPoT0XSoNMeOvbqEhpbHttN3WuHKOaBxgpcU3cXaJzsoryyOC2VfNOaJ0v4F6i4t1Iz10vMmG0d9lSThyXJ1jyF4Q38pyLtjYmc/fkOQ6jXct3Yip4A4RTZM/b551JyOe73n5EFIATXRC1DJP/uEHl4hS4EydzgTVdtUaSZMzOZ7wADhqswnw/OFrPCQ4bzwwrP3wP18YN8l2pWm9FVNldqpMS64ZEW+Wn5DLUFQAViHedXdTeKzvfkkoXAfwRi5G1ppI4hRXabUaULn0kD88NwYhXISnhp8X20bxl6xFRA0pHcHiVS84xgnfduns/msChqbBhvayNJjJt0Osdm5y2fC1PqGIZB5iFiPqW3Bn7hFKQSYYlwLGPZ4FmVj5RRKAqWXubm1P9Z7vulReKYBEzuA/XJBB/b5kIqInm35PvexcwwwTMGk4Y16GLZAb0II0BOQZ+3Lt+D1kf/IFka5kUbXnJQojNZ4a2eM3g1vDF9lsqWSCRjxsJt6vCA944rZmgsyLxsULp2VZwhjxc2EEM5TaFai9SAd6XDwwBujGvVUhmDUGVhj88XAxrq9o/PaidRHhSIFlDeAkwHQ58dZ3Fvlepg7Uql11T9/t8tybv+2WAr1s=
-  on:
-    branch: main
+stages:
+  - test
+  - deploy
+jobs:
+  include:
+    - stage: deploy
+      python: 3.6
+      install: skip
+      script: skip
+      deploy:
+        provider: pypi
+        username: __token__
+        password:
+          secure: W2xP4S3DkCkwWdumido0BhOI23ibd3m3NzFA1jHacK8EFhycmYhogmHgpLyPoT0XSoNMeOvbqEhpbHttN3WuHKOaBxgpcU3cXaJzsoryyOC2VfNOaJ0v4F6i4t1Iz10vMmG0d9lSThyXJ1jyF4Q38pyLtjYmc/fkOQ6jXct3Yip4A4RTZM/b551JyOe73n5EFIATXRC1DJP/uEHl4hS4EydzgTVdtUaSZMzOZ7wADhqswnw/OFrPCQ4bzwwrP3wP18YN8l2pWm9FVNldqpMS64ZEW+Wn5DLUFQAViHedXdTeKzvfkkoXAfwRi5G1ppI4hRXabUaULn0kD88NwYhXISnhp8X20bxl6xFRA0pHcHiVS84xgnfduns/msChqbBhvayNJjJt0Osdm5y2fC1PqGIZB5iFiPqW3Bn7hFKQSYYlwLGPZ4FmVj5RRKAqWXubm1P9Z7vulReKYBEzuA/XJBB/b5kIqInm35PvexcwwwTMGk4Y16GLZAb0II0BOQZ+3Lt+D1kf/IFka5kUbXnJQojNZ4a2eM3g1vDF9lsqWSCRjxsJt6vCA944rZmgsyLxsULp2VZwhjxc2EEM5TaFai9SAd6XDwwBujGvVUhmDUGVhj88XAxrq9o/PaidRHhSIFlDeAkwHQ58dZ3Fvlepg7Uql11T9/t8tybv+2WAr1s=
+        on:
+          branch: main
