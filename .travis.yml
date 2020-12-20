@@ -18,3 +18,10 @@ install:
 - pip install .
 script:
 - pytest
+deploy:
+  provider: pypi
+  username: __token__
+  password:
+    secure: XZRBXTTi0YYRGddyG+GpDK75oaqQ4NqS/Y4a5V65ZgcokkoeAoHUff8vB0buAkaf/WsqQXgHC1GmZnQvhNIySIoyz1mcaFJMjnslrgqomqRlrt01ASCR0oTCjEEfa3MIGYFNtxgk9dQu0ZC5QzfW8fdp6ZRWaguhL26xLd4DLcWKMJqfEEfuKEIUEzdG1FS/5PEZmG1qQg7w3DWqeYou/CRd6W81TINvseE4uGlTBokevwLj4cs/MeBvuVzGDuMwXa+lACyMWwIZ0bO0wqgbxQ0MzJEtEL5EO+i50NXe4SrQdb8pWfW/vgQXKg/TCx5MhlPb6Cm0ns7HBZT2yk8ikoLaCfzaRcQyVSqZGTs64sCuRLRE12F3jDSC0vbKOJ0mO8UBpg4LcZz4MP9qtyERRniyoVe29zai3Px/oPKuHhk1nwrbqukac+OZAvntYAW9SoLbSt2b/Xtz/bEJlhIFXc/YO87UvRI+lNOk38yNY91MOrzI9KR0U+o8383o8n4nb/jn+vdohKY8bfG43QYlwea+yni0dPIdXq1/Pk6aMu76VcOQIlLGXVCWNHvEcEhStjhqBR66m3m+NLnjEall08kSlsrvwtn0YR76ywE90Qq5DTaRmeHFEbSR36ifc2EI7DgJaHNTRmBpC9haEgT0MszRSb84EItQ352mgKC0ffA=
+  on:
+    branch: main
